@@ -3,6 +3,7 @@ const FollowUp = require("../models/followUp");
 const Status = require("../models/status");
 const User = require("../models/user");
 const Lead = require("../models/lead");
+const moment = require("moment-timezone");
 
 //get all followUps
 async function getFollowUps(req, res) {
@@ -34,8 +35,16 @@ async function addFollowUp(req, res) {
     return res.status(400).json({ error: "no such user" });
   }
 
-  // Current datetime
-  const currentDateTime = new Date();
+  
+  let date = new Date();
+
+   // Current datetime
+   const targetTimeZone = "Asia/Colombo"; // Replace with the desired time zone
+   const customDateUTC = new Date(
+     moment.tz(date, targetTimeZone).format("YYYY-MM-DDTHH:mm:ss[Z]")
+   ); // Replace with your desired date and time in UTC
+   console.log("Converted Date:", customDateUTC);
+  
 
   try {
     const newFollowUp = await FollowUp.create({
@@ -43,7 +52,7 @@ async function addFollowUp(req, res) {
       user_id: user_id,
       status_id: status,
       comment,
-      date: currentDateTime,
+      date: customDateUTC,
     });
 
     const leadDoc = await Lead.findById({ _id: lead_id })

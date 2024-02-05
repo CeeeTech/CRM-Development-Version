@@ -12,6 +12,7 @@ const { default: mongoose } = require("mongoose");
 const User = require("../models/user");
 const Notification = require("../models/notification");
 const notificationController = require('../controllers/notificationController')
+const moment = require("moment-timezone");
 const startTime = 8
 const endTime = 17
 const threshold = 4
@@ -131,7 +132,12 @@ async function addLead(req, res) {
     }
 
     // Current datetime
-    const currentDateTime = new Date();
+    let currentDate = new Date();
+    const targetTimeZone = "Asia/Colombo"; // Replace with the desired time zone
+    const customDateUTC = new Date(
+      moment.tz(currentDate, targetTimeZone).format("YYYY-MM-DDTHH:mm:ss[Z]")
+    ); // Replace with your desired date and time in UTC
+    console.log("Converted Date:", customDateUTC);
 
     // Check if student exists in the student table
     if (!mongoose.Types.ObjectId.isValid(student_id)) {
@@ -152,8 +158,8 @@ async function addLead(req, res) {
 
     // Create new lead
     const newLead = await Lead.create({
-      date: date,
-      sheduled_at: currentDateTime,
+      date: customDateUTC,
+      sheduled_at: customDateUTC,
       scheduled_to: sheduled_to,
       course_id: course_document._id,
       branch_id: branch_document._id,
