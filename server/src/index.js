@@ -19,13 +19,12 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const counsellorAssignmentRoutes = require("./routes/counsellorAssignmentRoutes");
 const requireAuth = require("./middleware/requireAuth");
 const logFunctionExecution = require("./middleware/log");
-const socketIo = require("socket.io");
-process.env.TZ = "Asia/Colombo";
+const socketIo = require('socket.io');
 
 const app = express();
 app.use(cors());
 
-const port = 8080;
+const port = 443;
 
 // Use body-parser middleware
 app.use(bodyParser.json());
@@ -75,32 +74,20 @@ app.use("/api", counsellorAssignmentRoutes);
 app.use("/api", notificationRoutes);
 
 const httpsOptions = {
-  key: fs.readFileSync(path.join(__dirname, "../server.key")),
-  cert: fs.readFileSync(path.join(__dirname, "../server.cert")),
+  key: fs.readFileSync('/etc/letsencrypt/live/apicrm.sltc.ac.lk/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/apicrm.sltc.ac.lk/fullchain.pem')
 };
 
 // Create an HTTP server and listen on the specified port
 const server = https.createServer(httpsOptions, app);
-const io = socketIo(server, {
-  transports: ["polling"],
-  cors: {
-    origin: [
-      "https://localhost:3000",
-      "http://localhost:3000",
-      "http://localhost",
-      "http://localhost/build/",
-    ],
-  },
+const io = socketIo(server,{
+  transports: ['polling'],
+  cors: { origin: ['https://localhost:3000','http://localhost:3000','http://localhost','http://localhost/build/','https://crm.c3e.tech','http://crm.c3e.tech'] }
 });
 
-const { initializeSocket } = require("./service/notification");
+const { initializeSocket } = require('./service/notification');
 initializeSocket(io);
+
 server.listen(port, () => {
-  const now = new Date();
-  const localTimezoneOffset = 5.5 * 60; // Sri Lanka is UTC+5:30
-  const localISOString = new Date(
-    now.getTime() + localTimezoneOffset * 60000
-  ).toISOString();
-  console.log(localISOString);
   console.log(`Server running at https://localhost:${port}/`);
 });
