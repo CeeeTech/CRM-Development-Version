@@ -5,7 +5,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { Button, CardActions, Divider, InputAdornment, Typography, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import TextareaAutosize from '@mui/material/TextareaAutosize';
+// import TextareaAutosize from '@mui/material/TextareaAutosize';
 // import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import * as Yup from 'yup';
@@ -17,6 +17,7 @@ import { useAuthContext } from '../../../context/useAuthContext';
 import { useLogout } from '../../../hooks/useLogout';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import CircularProgress from '@mui/material/CircularProgress';
 
 export default function CourseForm() {
   const { user } = useAuthContext();
@@ -221,16 +222,22 @@ export default function CourseForm() {
                     <Field name="description">
                       {({ field, meta }) => (
                         <>
-                          <TextareaAutosize
+                          <TextField
+                            multiline
                             minRows={8}
                             fullWidth
-                            style={{ width: '100%', borderColor: theme.palette.main }}
                             margin="normal"
+                            onBlur={handleBlur}
+                            onChange={handleChange}
                             {...field}
+                            value={values.description}
+                            error={Boolean(touched.description && errors.description)}
+                            helperText={
+                              meta.touched && meta.error ? (
+                                <div style={{ color: 'red', fontSize: '0.75rem', marginTop: '0.25rem' }}>{meta.error}</div>
+                              ) : null
+                            }
                           />
-                          {meta.touched && meta.error && (
-                            <div style={{ color: 'red', fontSize: '0.75rem', marginTop: '0.25rem' }}>{meta.error}</div>
-                          )}
                         </>
                       )}
                     </Field>
@@ -239,7 +246,12 @@ export default function CourseForm() {
                 </Grid>
                 <Divider sx={{ mt: 3, mb: 2 }} />
                 <CardActions sx={{ justifyContent: 'flex-end' }}>
-                  <Button variant="contained" type="submit" disabled={isSubmitting}>
+                  <Button
+                    variant="contained"
+                    type="submit"
+                    disabled={isSubmitting}
+                    endIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+                  >
                     {courseId ? 'Update Course' : 'Add Course'}
                   </Button>
                 </CardActions>
