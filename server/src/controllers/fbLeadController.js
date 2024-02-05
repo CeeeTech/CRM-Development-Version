@@ -142,7 +142,7 @@ async function addLead(student_id, course_name, formId) {
 
 
     // Check if course_name exists in the course table
-    let course_document = await Course.findOne({ name: course_name });
+    let course_document = await Course.findOne({ course_code: course_name });
     if (!course_document) {
       course_document = await Course.findOne({ course_code: 'other' });
     }
@@ -255,11 +255,9 @@ async function addFollowUp(lead_id, user_id, status) {
     const leadDoc = await Lead.findById({ _id: lead_id })
     leadDoc.status_id = status;
     await leadDoc.save();
-
-    return res.status(200).json(newFollowUp);
+    console.log("Added the follow-up");
   } catch (error) {
     console.log("Error adding follow-up", error);
-    return res.status(500).json({ error: "Internal Server Error" });
   }
 }
 

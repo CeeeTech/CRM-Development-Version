@@ -236,19 +236,13 @@ export default function UserForm() {
             showErrorSwal();
           }
           return;
-        }
-
-        const response = await res.json();
-        console.log('Server response:', response);
-        if (response.status === 400) {
-          showErrorSwal(response.message);
-        }
+        } 
       } catch (error) {
         console.error('Error submitting form:', error);
         // Set error message
         console.log('Server response:', response);
-        if (response.status === 400) {
-          showErrorSwal(response.message);
+        if (res.status === 400) {
+          showErrorSwal(res.message);
         } else {
           showErrorSwal();
         }

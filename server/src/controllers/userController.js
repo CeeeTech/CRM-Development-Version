@@ -214,6 +214,13 @@ async function updateUserByIdUsernameEmailUserTypeProductType(req, res) {
         .json({ error: `user_type not found: ${userType}` });
     }
 
+    // check if the email already exists
+    const userAvailable = await User.findOne({ email });
+
+    if (userAvailable) {
+      return res.status(400).json({ error: "Email already exists" });
+    }
+
     // Prepare the update data
     const updateData = {
       name,

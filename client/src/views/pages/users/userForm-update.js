@@ -190,6 +190,9 @@ export default function UpdateForm() {
             console.error('Internal Server Error.');
             logout();
             return;
+          } else if (res.status === 400) {
+            showErrorSwal('Email already exists');
+            showErrorSwal();
           } else {
             showErrorSwal();
           }
@@ -201,7 +204,11 @@ export default function UpdateForm() {
         console.log('Server response:', await res.json());
       } catch (error) {
         console.error('Error submitting user details form:', error);
-        showErrorSwal();
+        if (res.status === 400) {
+          showErrorSwal(res.message);
+        } else {
+          showErrorSwal();
+        }
       }
     }
   });
