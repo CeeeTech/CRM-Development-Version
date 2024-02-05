@@ -109,9 +109,10 @@ async function addLead(req, res) {
     }
 
     // Current datetime
+    let currentDate = new Date();
     const targetTimeZone = "Asia/Colombo"; // Replace with the desired time zone
     const customDateUTC = new Date(
-      moment.tz(date, targetTimeZone).format("YYYY-MM-DDTHH:mm:ss[Z]")
+      moment.tz(currentDate, targetTimeZone).format("YYYY-MM-DDTHH:mm:ss[Z]")
     ); // Replace with your desired date and time in UTC
     console.log("Converted Date:", customDateUTC);
 

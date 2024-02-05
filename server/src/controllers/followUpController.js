@@ -35,13 +35,13 @@ async function addFollowUp(req, res) {
     return res.status(400).json({ error: "no such user" });
   }
 
-  // Current datetime
-  const currentDateTime = new Date();
+  
+  let date = new Date();
 
    // Current datetime
    const targetTimeZone = "Asia/Colombo"; // Replace with the desired time zone
    const customDateUTC = new Date(
-     moment.tz(currentDateTime, targetTimeZone).format("YYYY-MM-DDTHH:mm:ss[Z]")
+     moment.tz(date, targetTimeZone).format("YYYY-MM-DDTHH:mm:ss[Z]")
    ); // Replace with your desired date and time in UTC
    console.log("Converted Date:", customDateUTC);
   
