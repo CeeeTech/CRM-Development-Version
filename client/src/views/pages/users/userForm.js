@@ -59,10 +59,10 @@ export default function UserForm() {
   };
 
   // error showErrorSwal
-  const showErrorSwal = () => {
+  const showErrorSwal = (customErrorTitle) => {
     Toast.fire({
       icon: 'error',
-      title: 'Error While Saving Uesr Details.'
+      title: customErrorTitle || 'Error While Saving Uesr Details.'
     });
   };
 
@@ -229,18 +229,29 @@ export default function UserForm() {
             console.error('Internal Server Error.');
             logout();
             return;
+          } else if (res.status === 400) {
+            showErrorSwal('Email already exists');
+            showErrorSwal();
           } else {
             showErrorSwal();
           }
           return;
         }
-        
+
         const response = await res.json();
         console.log('Server response:', response);
+        if (response.status === 400) {
+          showErrorSwal(response.message);
+        }
       } catch (error) {
         console.error('Error submitting form:', error);
         // Set error message
-        showErrorSwal();
+        console.log('Server response:', response);
+        if (response.status === 400) {
+          showErrorSwal(response.message);
+        } else {
+          showErrorSwal();
+        }
       }
     }
   });

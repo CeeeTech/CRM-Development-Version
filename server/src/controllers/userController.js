@@ -4,7 +4,7 @@ const User_type = require("../models/user_type");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
-const multer = require('multer');
+const multer = require("multer");
 const upload = multer.memoryStorage();
 
 async function getUsers(req, res) {
@@ -34,6 +34,13 @@ async function createUser(req, res) {
       return res
         .status(400)
         .json({ error: `user_type not found: ${user_type}` });
+    }
+
+    // check if the email already exists
+    const userAvailable = await User.findOne({ email });
+
+    if (userAvailable) {
+      return res.status(400).json({ error: "Email already exists" });
     }
 
     // Hash the password before saving
@@ -213,7 +220,7 @@ async function updateUserByIdUsernameEmailUserTypeProductType(req, res) {
       email,
       userType,
       product_type,
-    };      
+    };
 
     // Update the user by ID
     const updatedUser = await User.findByIdAndUpdate(id, updateData, {
@@ -222,7 +229,8 @@ async function updateUserByIdUsernameEmailUserTypeProductType(req, res) {
 
     if (!updatedUser) {
       return res.status(404).json({ error: "User not found" });
-    }3
+    }
+    3;
 
     res.status(200).json({ user: updatedUser, message: "User updated!" });
   } catch (error) {
@@ -251,15 +259,13 @@ async function updateUserByIdUsernamePassword(req, res) {
 
     // If profilePicture is provided, add it to the update object
     if (req.file) {
-      updateObject.profilePicture = req.file.buffer.toString('base64'); // Store as base64 string
+      updateObject.profilePicture = req.file.buffer.toString("base64"); // Store as base64 string
     }
 
     // Update the user by ID
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      updateObject,
-      { new: true }
-    );
+    const updatedUser = await User.findByIdAndUpdate(id, updateObject, {
+      new: true,
+    });
 
     if (!updatedUser) {
       return res.status(404).json({ error: "User not found" });
@@ -268,7 +274,7 @@ async function updateUserByIdUsernamePassword(req, res) {
     res
       .status(200)
       .json({ user: updatedUser, message: "User updated successfully!" });
-      console.log("updatedUser", updatedUser);
+    console.log("updatedUser", updatedUser);
   } catch (error) {
     console.error("Error updating user:", error);
     res.status(500).json({ error: "Internal Server Error" });
