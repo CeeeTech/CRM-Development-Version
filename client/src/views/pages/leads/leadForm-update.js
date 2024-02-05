@@ -27,6 +27,7 @@ import { Formik } from 'formik';
 import { useLogout } from '../../../hooks/useLogout';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
+import CircularProgress from '@mui/material/CircularProgress';
 
 export default function LeadForm() {
   const [sid, setSid] = useState('');
@@ -292,7 +293,7 @@ export default function LeadForm() {
         student_id: sid,
         course_id: course_id,
         branch_id: branch_id,
-        scheduled_to: values.scheduled_to || null
+        scheduled_to: values.scheduled_to == 'NaN-NaN-NaN'? '' : values.scheduled_to
       };
 
       const updateLead = await fetch(config.apiUrl + `api/leads/${leadId}`, {
@@ -788,7 +789,9 @@ export default function LeadForm() {
                       )}
                     </Grid>
                     <CardActions sx={{ justifyContent: 'flex-end' }}>
-                      <Button variant="contained" type="submit" disabled={isSubmitting}>
+                      <Button variant="contained" type="submit" 
+                      disabled={isSubmitting}
+                      endIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}>
                         Update Lead
                       </Button>
                     </CardActions>
