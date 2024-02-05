@@ -75,20 +75,44 @@ async function restoreLead(req, res) {
     { new: true } // Set to true to return the modified document rather than the original
   );
 
-  if(updateLead){
-  res.status(200).json({ message: "Lead restored successfully" });
+  if (updateLead) {
+    res.status(200).json({ message: "Lead restored successfully" });
   }
-  else{
+  else {
     return res.status(400).json({ error: "An error occured" });
 
   }
 }
 
-//add new lead
+//add new lead student followup
 async function addLead(req, res) {
+
+  const { name, nic, dob, contact_no, email, address, date, sheduled_to, course_name, branch_name, user_id } = req.body;
+
+  var student_id;
+  var lead_id;
+
+  // add student
   try {
-    const { date, sheduled_to, course_name, branch_name, student_id, user_id } =
-      req.body;
+    
+    // Create a new student
+    const newStudent = await Student.create({
+      name,
+      nic,
+      dob,
+      contact_no,
+      email,
+      address,
+    });
+
+    student_id = newStudent._id;
+    // res.status(200).json(newStudent);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+
+  //add lead
+  try {
 
     // Check if course_name exists in the course table
     const course_document = await Course.findOne({ name: course_name });
@@ -138,15 +162,16 @@ async function addLead(req, res) {
       source_id: source_document._id,
     });
 
+    lead_id = newLead._id;
     // Send success response
-    res.status(200).json(newLead);
+    // res.status(200).json(newLead);
 
     var cid;
 
     const { leastAllocatedCounselor } = await getLeastAndNextLeastAllocatedCounselors(course_document._id.toString());
 
     if (leastAllocatedCounselor) {
-      const cid = leastAllocatedCounselor._id;
+      cid = leastAllocatedCounselor._id;
 
       // Create new counselor assignment
       const newCounsellorAssignment = await CounsellorAssignment.create({
@@ -184,6 +209,196 @@ async function addLead(req, res) {
     // Send internal server error response
     res.status(500).json({ error: "Internal Server Error" });
   }
+
+  try {
+
+    // Check if lead exists in the lead table
+    if (!mongoose.Types.ObjectId.isValid(lead_id)) {
+      return res.status(400).json({ error: "no such lead" });
+    }
+
+    // Check if user exists in the user table
+    else if (!mongoose.Types.ObjectId.isValid(user_id)) {
+      return res.status(400).json({ error: "no such user" });
+    }
+
+    const status_document = await Status.findOne({ name: "New" });
+    if (!status_document) {
+      return res.status(400).json({ error: `Status not found: New` });
+    }
+
+    // Current datetime
+    const currentDateTime = new Date();
+
+    try {
+      const newFollowUp = await FollowUp.create({
+        lead_id: lead_id,
+        user_id: user_id,
+        status_id: status_document._id,
+        date: currentDateTime,
+      });
+
+      const leadDoc = await Lead.findById({ _id: lead_id })
+      leadDoc.status_id = status_document._id;
+      await leadDoc.save();
+
+      return res.status(200).json(newFollowUp);
+    } catch (error) {
+      console.log("Error adding follow-up", error);
+      // return res.status(500).json({ error: "Internal Server Error" });
+    }
+
+  } catch (e) {
+    console.log(e)
+  }
+
+}
+
+//add lead and followup
+async function addLeadWithExistingStudent(req,res) {
+  const { student_id, date, sheduled_to, course_name, branch_name, user_id } = req.body;
+
+  //add lead
+  try {
+
+    // Check if course_name exists in the course table
+    const course_document = await Course.findOne({ name: course_name });
+    if (!course_document) {
+      return res
+        .status(400)
+        .json({ error: `Course not found: ${course_name}` });
+    }
+
+    // Check if branch_name exists in the branch table
+    const branch_document = await Branch.findOne({ name: branch_name });
+    if (!branch_document) {
+      return res
+        .status(400)
+        .json({ error: `Branch not found: ${branch_name}` });
+    }
+
+    // Current datetime
+    const currentDateTime = new Date();
+
+    // Check if student exists in the student table
+    if (!mongoose.Types.ObjectId.isValid(student_id)) {
+      return res.status(400).json({ error: "No such student" });
+    }
+
+    // Check if user exists in the user table
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+      return res.status(400).json({ error: "No such user" });
+    }
+
+    // Check if source name exists in the source table
+    const source_document = await Source.findOne({ name: "manual" });
+    if (!source_document) {
+      return res.status(400).json({ error: `Source not found: manual` });
+    }
+
+
+    // Create new lead
+    const newLead = await Lead.create({
+      date: date,
+      sheduled_at: currentDateTime,
+      scheduled_to: sheduled_to,
+      course_id: course_document._id,
+      branch_id: branch_document._id,
+      student_id: student_id,
+      user_id: user_id,
+      source_id: source_document._id,
+    });
+
+    lead_id = newLead._id;
+    // Send success response
+    // res.status(200).json(newLead);
+
+    var cid;
+
+    const { leastAllocatedCounselor } = await getLeastAndNextLeastAllocatedCounselors(course_document._id.toString());
+
+    if (leastAllocatedCounselor) {
+      cid = leastAllocatedCounselor._id;
+
+      // Create new counselor assignment
+      const newCounsellorAssignment = await CounsellorAssignment.create({
+        lead_id: newLead._id,
+        counsellor_id: cid,
+        assigned_at: date,
+      });
+
+      const studentDoc = await Student.findById({ _id: student_id })
+
+      // Update lead with assignment_id
+      newLead.assignment_id = newCounsellorAssignment._id;
+      newLead.counsellor_id = cid;
+      await newLead.save();
+
+      console.log('notification was called')
+      await notificationController.sendNotificationToCounselor(
+        cid,
+        `You have assigned a new lead belongs to ${studentDoc.email}.`,
+        "success"
+      );
+      console.log('notification was called after')
+
+      console.log("lead", newLead)
+      console.log("assignment", newCounsellorAssignment)
+    } else {
+      console.log("No counselor available");
+    }
+
+
+  } catch (error) {
+    // Log error
+    console.log("Error adding leads:", error);
+
+    // Send internal server error response
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+
+  try {
+
+    // Check if lead exists in the lead table
+    if (!mongoose.Types.ObjectId.isValid(lead_id)) {
+      return res.status(400).json({ error: "no such lead" });
+    }
+
+    // Check if user exists in the user table
+    else if (!mongoose.Types.ObjectId.isValid(user_id)) {
+      return res.status(400).json({ error: "no such user" });
+    }
+
+    const status_document = await Status.findOne({ name: "New" });
+    if (!status_document) {
+      return res.status(400).json({ error: `Status not found: New` });
+    }
+
+    // Current datetime
+    const currentDateTime = new Date();
+
+    try {
+      const newFollowUp = await FollowUp.create({
+        lead_id: lead_id,
+        user_id: user_id,
+        status_id: status_document._id,
+        date: currentDateTime,
+      });
+
+      const leadDoc = await Lead.findById({ _id: lead_id })
+      leadDoc.status_id = status_document._id;
+      await leadDoc.save();
+
+      return res.status(200).json(newFollowUp);
+    } catch (error) {
+      console.log("Error adding follow-up", error);
+      // return res.status(500).json({ error: "Internal Server Error" });
+    }
+
+  } catch (e) {
+    console.log(e)
+  }
+
 }
 
 //update lead
@@ -514,47 +729,47 @@ async function assignLeadsToCounselors() {
 
 
 
-async function assignLeadsToCounselorsTest(req,res) {
+async function assignLeadsToCounselorsTest(req, res) {
   const startTime = 8
   const endTime = 17
   const threshold = 4
-  const { added_time,current_time} = req.body;
+  const { added_time, current_time } = req.body;
   const addedTime = added_time;
   const currentTime = current_time
-  console.log(addedTime,currentTime,req.body)
+  console.log(addedTime, currentTime, req.body)
 
-      //Check leads came after 17h to 8h
-      if (!(addedTime >= startTime && addedTime <= endTime)) {
-        if (Math.abs(currentTime - startTime) >= threshold) {
-          res.status(200).json('reassigned')
-          return
-        }
-        else {
-          res.status(200).json('not reassigned')
-          return
-        }
-      }
-      //Check leads came before 17h but not filled with 4h threshold
-      if (Math.abs(addedTime - endTime) <= 4) {
-        if ((Math.abs(addedTime - endTime)) + (Math.abs(currentTime - startTime)) >= threshold) {
-          res.status(200).json('reassigned')
-          return
-        }
-        else {
-          res.status(200).json('not reassigned')
-          return
-        }
-      }
+  //Check leads came after 17h to 8h
+  if (!(addedTime >= startTime && addedTime <= endTime)) {
+    if (Math.abs(currentTime - startTime) >= threshold) {
+      res.status(200).json('reassigned')
+      return
+    }
+    else {
+      res.status(200).json('not reassigned')
+      return
+    }
+  }
+  //Check leads came before 17h but not filled with 4h threshold
+  if (Math.abs(addedTime - endTime) <= 4) {
+    if ((Math.abs(addedTime - endTime)) + (Math.abs(currentTime - startTime)) >= threshold) {
+      res.status(200).json('reassigned')
+      return
+    }
+    else {
+      res.status(200).json('not reassigned')
+      return
+    }
+  }
 
-      //Other normal flow
-      if (Math.abs(currentTime - addedTime) >= threshold) {
-        res.status(200).json('reassigned')
-        return
-      }
-      else {
-        res.status(200).json('not reassigned')
-        return
-      }
+  //Other normal flow
+  if (Math.abs(currentTime - addedTime) >= threshold) {
+    res.status(200).json('reassigned')
+    return
+  }
+  else {
+    res.status(200).json('not reassigned')
+    return
+  }
 
 }
 
@@ -590,5 +805,6 @@ module.exports = {
   getOneLeadSummaryDetails,
   getLeastAndNextLeastAllocatedCounselors,
   assignLeadsToCounselorsTest,
-  restoreLead
+  restoreLead,
+  addLeadWithExistingStudent
 };
