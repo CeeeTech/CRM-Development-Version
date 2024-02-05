@@ -6,6 +6,7 @@ const router = express.Router()
 
 router.get('/leads', leadController.getLeads)
 router.post('/leads', leadController.addLead)
+router.post('/leadswithstudent', leadController.addLeadWithExistingStudent)
 router.get('/leads/:id', leadController.getOneLeadSummaryDetails)
 router.patch('/leads/:id', leadController.updateLead)
 router.post('/lead-restore/', leadController.restoreLead)
