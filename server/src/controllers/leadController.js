@@ -70,6 +70,13 @@ async function restoreLead(req, res) {
   // Delete the last entry in the FollowUp table
   await FollowUp.findByIdAndDelete(lastFollowUpId);
   const newLastFollowUp = await FollowUp.find({ lead_id: id }).sort({ date: -1 }).limit(1);
+
+  if (newLastFollowUp.length === 0) {
+    // If newLastFollowUp is empty, handle this case accordingly
+    return res.status(400).json({ error: "No followup to reverse." });
+    // You might want to return an error response or take other appropriate action
+  } 
+
   const updatedLead = await Lead.findByIdAndUpdate(
     id, // Assuming 'id' is the lead's ID you want to update
     { $set: { status_id: newLastFollowUp[0].status_id } }, // Update the 'status' field to the desired new value
