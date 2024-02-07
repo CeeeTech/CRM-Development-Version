@@ -113,6 +113,25 @@ async function processNewLead(leadId, formId) {
   }
   console.log('A new lead was received!\n', leadForm);
   const { full_name, email, phone_number, date_of_birth, course_you_are_looking_for } = leadForm;
+  let course_var
+  if(course_you_are_looking_for){
+    course_var = course_you_are_looking_for
+  }
+  else{
+    const {degree_you_are_looking_for} = leadForm
+    if(degree_you_are_looking_for){
+      course_var = degree_you_are_looking_for
+    }
+    else{
+    const {programme_you_are_looking_for} = leadForm
+    if(programme_you_are_looking_for){
+      course_var = programme_you_are_looking_for
+    }
+    else{
+      course_var = null
+    }
+    }
+  }
   var student_id;
   let date_of_birth_to_add
   if(date_of_birth=='NaN-NaN-NaN'){
