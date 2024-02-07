@@ -271,15 +271,6 @@ async function addLead(req, res) {
 
 }
 
-async function getNextSequenceValue(sequenceName) {
-  const counter = await Counter.findOneAndUpdate(
-      { _id: sequenceName },
-      { $inc: { sequence_value: 1 } },
-      { returnOriginal: false, upsert: true }
-  );
-  return counter.sequence_value;
-}
-
 //add lead and followup
 async function addLeadWithExistingStudent(req,res) {
   const { student_id, date, sheduled_to, course_name, branch_name, user_id } = req.body;
@@ -322,6 +313,7 @@ async function addLeadWithExistingStudent(req,res) {
       return res.status(400).json({ error: `Source not found: manual` });
     }
 
+    const sequenceValue = await getNextSequenceValue('unique_id_sequence');
 
     // Create new lead
     const newLead = await Lead.create({
@@ -333,6 +325,7 @@ async function addLeadWithExistingStudent(req,res) {
       student_id: student_id,
       user_id: user_id,
       source_id: source_document._id,
+      reference_number: sequenceValue,
     });
 
     lead_id = newLead._id;
@@ -427,6 +420,15 @@ async function addLeadWithExistingStudent(req,res) {
 
 }
 
+async function getNextSequenceValue(sequenceName) {
+  const counter = await Counter.findOneAndUpdate(
+      { _id: sequenceName },
+      { $inc: { sequence_value: 1 } },
+      { returnOriginal: false, upsert: true }
+  );
+  return counter.sequence_value;
+}
+
 //update lead
 async function updateLead(req, res) {
   const { id } = req.params;
@@ -516,7 +518,7 @@ async function getOneLeadSummaryDetails(req, res) {
       address: student.address,
       course: lead.course_id.name,
       branch: lead.branch_id.name,
-      status: latestFollowUp ? latestFollowUp.status_id.name : null,
+      status: latestFollowUp?  latestFollowUp.status_id ? latestFollowUp.status_id.name : null : null,
       comment: latestFollowUp ? latestFollowUp.comment : null,
     };
 
