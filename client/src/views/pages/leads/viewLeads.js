@@ -309,7 +309,12 @@ export default function ViewLeads() {
           <Button
             variant="contained"
             color="error"
-            // when onClick is triggered, the lead ID should be added to the arrIds state
+            // when onclick is called, it should open a dialog to confirm the deletion of the lead. so here should pass the lead id to the handle delete
+            onClick={() => {
+              console.log('clicked', params.row.id);
+              const arr = [params.row.id];
+              handleSingleDelete(arr);
+            }}
             style={{ marginLeft: '5px' }}
             sx={{ borderRadius: '50%', padding: '8px', minWidth: 'unset', width: '40px', height: '40px' }}
           >
@@ -404,35 +409,33 @@ export default function ViewLeads() {
 
       let leads = await res.json();
 
-      console.log(leads);
+      leads = leads.map((lead) => {
+        const student = lead.student_id || {};
 
-      leads = leads.map((lead) => ({
-        reference_number: lead.reference_number,
-        id: lead._id,
-        date: lead.date,
-        scheduled_at: lead.scheduled_at ? lead.scheduled_at : null,
-        scheduled_to: lead.scheduled_to ? lead.scheduled_to : null,
-        name: lead.student_id.name,
-        contact_no: lead.student_id.contact_no,
-        address: lead.student_id.address,
-        dob: lead.student_id.dob,
-        email: lead.student_id.email,
-        nic: lead.student_id.nic,
-        course: lead.course_id.name,
-        course_code: shortenCourseName(lead.course_id.name),
-        branch: lead.branch_id.name,
-        source: lead.source_id ? lead.source_id.name : null,
-        counsellor: lead.assignment_id ? lead.assignment_id.counsellor_id.name : null,
-        counsellor_id: lead.assignment_id ? lead.assignment_id.counsellor_id._id : null,
-        assigned_at: lead.counsellorAssignment ? lead.counsellorAssignment.assigned_at : null,
-        user_id: lead.user_id ? lead.user_id : null,
-        status: lead.status_id ? lead.status_id.name : null
-      }));
+        return {
+          reference_number: lead.reference_number,
+          id: lead._id,
+          date: lead.date,
+          scheduled_at: lead.scheduled_at || null,
+          scheduled_to: lead.scheduled_to || null,
+          name: student.name || null,
+          contact_no: student.contact_no || null,
+          address: student.address || null,
+          dob: student.dob || null,
+          email: student.email || null,
+          nic: student.nic || null,
+          course: lead.course_id.name,
+          course_code: shortenCourseName(lead.course_id.name),
+          branch: lead.branch_id.name,
+          source: lead.source_id ? lead.source_id.name : null,
+          counsellor: lead.assignment_id ? lead.assignment_id.counsellor_id.name : null,
+          counsellor_id: lead.assignment_id ? lead.assignment_id.counsellor_id._id : null,
+          assigned_at: lead.counsellorAssignment ? lead.counsellorAssignment.assigned_at : null,
+          user_id: lead.user_id || null,
+          status: lead.status_id ? lead.status_id.name : null
+        };
+      });
 
-      console.log(leads);
-
-      // Assuming that the backend res is an array of leads
-      // Filter leads based on the counselor ID from the backend res
       if (permissions?.lead?.includes('read-all')) {
         setData(leads);
         setAllLeads(leads);
@@ -443,14 +446,12 @@ export default function ViewLeads() {
         setData(filteredLeads);
         setAllLeads(filteredLeads);
         setLoading(false);
-        console.log(filteredLeads); // Log the filtered leads
         return;
       } else if (permissions?.lead?.includes('read') && userType?.name === 'user') {
         const filteredLeads = leads.filter((lead) => lead.user_id === user._id);
         setData(filteredLeads);
         setAllLeads(filteredLeads);
         setLoading(false);
-        console.log(filteredLeads);
         return;
       }
     } catch (error) {
@@ -620,6 +621,21 @@ export default function ViewLeads() {
     navigate('/app/leads/add');
   }
 
+  const handleSingleDelete = (id) => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: 'You will not be able to recover this imaginary file!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, keep it'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        addToArchivedLeads(id);
+      }
+    });
+  };
+
   const handleDelete = () => {
     if (arrIds.length > 0) {
       Swal.fire({
@@ -639,12 +655,12 @@ export default function ViewLeads() {
     }
   };
 
-  async function addToArchivedLeads() {
+  async function addToArchivedLeads(id) {
     try {
       const res = await fetch(config.apiUrl + 'api/leads-archive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
-        body: JSON.stringify({ ids: arrIds })
+        body: id ? JSON.stringify({ ids: id }) : JSON.stringify({ ids: arrIds })
       });
 
       if (res.ok) {
@@ -690,15 +706,6 @@ export default function ViewLeads() {
         {loading && <LinearProgress />}
         <Grid container direction="column" justifyContent="center">
           <Grid container sx={{ p: 3 }} spacing={matchDownSM ? 0 : 2}>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={handleDelete}
-              style={{ marginLeft: '5px' }}
-              sx={{ borderRadius: '50%', padding: '8px', minWidth: 'unset', width: '40px', height: '40px' }}
-            >
-              <DeleteIcon sx={{ fontSize: '24px' }} />
-            </Button>
             <Grid container direction="column">
               <Grid container sx={{ p: 3 }} spacing={matchDownSM ? 0 : 2}>
                 <Grid item xs={8} sm={5}>
@@ -909,6 +916,31 @@ export default function ViewLeads() {
                 </Grid>
               </Grid>
             </Grid>
+
+            {arrIds.length > 1 && (
+              <Grid container justifyContent="flex-end">
+                <Grid item>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={handleDelete}
+                    style={{
+                      borderRadius: '20px',
+                      padding: '8px 16px',
+                      minWidth: '120px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <DeleteIcon sx={{ fontSize: '20px' }} />
+                    <span style={{ marginLeft: '8px', fontWeight: 'bold' }}>Delete Leads</span>
+                  </Button>
+                </Grid>
+              </Grid>
+            )}
+
             <Grid item xs={12} sm={12}>
               <div style={{ height: 710, width: '100%' }}>
                 <StripedDataGrid
