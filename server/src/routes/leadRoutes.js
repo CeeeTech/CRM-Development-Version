@@ -16,5 +16,6 @@ router.get('/fbleads', fbLeadController.getLeads)
 router.post('/fbleads', fbLeadController.postLeads)
 router.get('/fbleads-health', fbLeadController.getFBLeadsHealth)
 router.get('/test-leads', leadController.assignLeadsToCounselorsTest)
+router.post('/leads-archive', leadController.archiveLeads)
 
 module.exports = router

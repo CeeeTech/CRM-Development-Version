@@ -19,6 +19,7 @@ const leadArchivedSchema = new mongoose.Schema({
   reference_number: {
     type: Number,
     unique: true,
+    sparse: true,
   },
 });
 

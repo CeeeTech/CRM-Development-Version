@@ -93,6 +93,7 @@ export default function ViewLeads() {
   const [selectedLead, setSelectedLead] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [status, setStatus] = useState([]);
+  const [arrIds, setArrIds] = useState([]);
 
   const [counselors, setCounselors] = useState([]);
 
@@ -170,6 +171,27 @@ export default function ViewLeads() {
     Toast.fire({
       icon: 'error',
       title: 'Error Occured.'
+    });
+  };
+
+  const showSuccessSwalBulk = () => {
+    Toast.fire({
+      icon: 'success',
+      title: 'Leads Deleted Successfully.'
+    });
+  };
+
+  const showErrorSwalBulk = () => {
+    Toast.fire({
+      icon: 'error',
+      title: 'Error Occured While Deleting Leads.'
+    });
+  };
+
+  const showErrorSwalNoLead = () => {
+    Toast.fire({
+      icon: 'error',
+      title: 'No Lead Selected.'
     });
   };
 
@@ -287,9 +309,7 @@ export default function ViewLeads() {
           <Button
             variant="contained"
             color="error"
-            onClick={() => {
-              // Handle delete logic here
-            }}
+            // when onClick is triggered, the lead ID should be added to the arrIds state
             style={{ marginLeft: '5px' }}
             sx={{ borderRadius: '50%', padding: '8px', minWidth: 'unset', width: '40px', height: '40px' }}
           >
@@ -311,27 +331,26 @@ export default function ViewLeads() {
                 <AddCircleOutlineIcon sx={{ fontSize: '24px', color: 'white' }} />
               </Button>
             )}
-    
+
           {(params.row.status == 'Registered' ||
             params.row.status == 'Fake' ||
             params.row.status == 'Duplicate' ||
             params.row.status == 'Dropped') && (
-              <Button
-                variant="contained"
-                color="success"
-                onClick={() => {
-                  restorePrevious(params.row.id);
-                }}
-                style={{ marginLeft: '5px' }}
-                sx={{ borderRadius: '50%', padding: '8px', minWidth: 'unset', width: '40px', height: '40px', backgroundColor: '#d1bd0a' }}
-              >
-                <SettingsBackupRestoreIcon sx={{ fontSize: '24px', color: 'white' }} />
-              </Button>
-            )}
+            <Button
+              variant="contained"
+              color="success"
+              onClick={() => {
+                restorePrevious(params.row.id);
+              }}
+              style={{ marginLeft: '5px' }}
+              sx={{ borderRadius: '50%', padding: '8px', minWidth: 'unset', width: '40px', height: '40px', backgroundColor: '#d1bd0a' }}
+            >
+              <SettingsBackupRestoreIcon sx={{ fontSize: '24px', color: 'white' }} />
+            </Button>
+          )}
         </>
       )
     }
-    
   ];
 
   const shortenCourseName = (courseName) => {
@@ -601,6 +620,59 @@ export default function ViewLeads() {
     navigate('/app/leads/add');
   }
 
+  const handleDelete = () => {
+    if (arrIds.length > 0) {
+      Swal.fire({
+        title: 'Are you sure?',
+        text: 'You will not be able to recover this imaginary file!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'No, keep it'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          addToArchivedLeads();
+        }
+      });
+    } else {
+      showErrorSwalNoLead();
+    }
+  };
+
+  async function addToArchivedLeads() {
+    try {
+      const res = await fetch(config.apiUrl + 'api/leads-archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user.token}` },
+        body: JSON.stringify({ ids: arrIds })
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        console.log(json);
+        setLoading(true);
+        fetchLeads();
+        showSuccessSwalBulk();
+      } else {
+        if (res.status === 401) {
+          console.error('Unauthorized access. Logging out.');
+          logout();
+        } else if (res.status === 500) {
+          console.error('Internal Server Error.');
+          logout();
+          return;
+        } else {
+          console.error('Error fetching sources:', res.statusText);
+          showErrorSwalBulk();
+        }
+        return;
+      }
+    } catch (error) {
+      console.error('Error fetching sources:', error.message);
+      showErrorSwalBulk();
+    }
+  }
+
   return (
     <>
       <MainCard
@@ -618,6 +690,15 @@ export default function ViewLeads() {
         {loading && <LinearProgress />}
         <Grid container direction="column" justifyContent="center">
           <Grid container sx={{ p: 3 }} spacing={matchDownSM ? 0 : 2}>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleDelete}
+              style={{ marginLeft: '5px' }}
+              sx={{ borderRadius: '50%', padding: '8px', minWidth: 'unset', width: '40px', height: '40px' }}
+            >
+              <DeleteIcon sx={{ fontSize: '24px' }} />
+            </Button>
             <Grid container direction="column">
               <Grid container sx={{ p: 3 }} spacing={matchDownSM ? 0 : 2}>
                 <Grid item xs={8} sm={5}>
@@ -828,7 +909,6 @@ export default function ViewLeads() {
                 </Grid>
               </Grid>
             </Grid>
-
             <Grid item xs={12} sm={12}>
               <div style={{ height: 710, width: '100%' }}>
                 <StripedDataGrid
@@ -860,6 +940,9 @@ export default function ViewLeads() {
                   })}
                   pageSizeOptions={[10, 25, 100]}
                   checkboxSelection
+                  onRowSelectionModelChange={(ids) => {
+                    setArrIds(ids);
+                  }}
                 />
               </div>
             </Grid>
