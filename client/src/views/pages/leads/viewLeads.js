@@ -174,6 +174,7 @@ export default function ViewLeads() {
   };
 
   const columns = [
+    { field: 'reference_number', headerName: 'ID', width: 70 },
     {
       field: 'source',
       headerName: 'Source',
@@ -198,7 +199,7 @@ export default function ViewLeads() {
       headerName: 'Assign To',
       description: 'This column has a value getter and is not sortable.',
       sortable: false,
-      width: 160,
+      width: 170,
       align: 'left',
       renderCell: (params) => {
         if (isAdminOrSupervisor) {
@@ -209,7 +210,7 @@ export default function ViewLeads() {
                 id="combo-box-demo"
                 options={counselors}
                 sx={{ width: 200, my: 2 }}
-                renderInput={(params) => <TextField {...params} label="Choose a counsellor" variant="standard" />}
+                renderInput={(params) => <TextField {...params} variant="standard" />}
                 value={params.row.counsellor}
                 onChange={(event, newValue) => {
                   // Handle the selection here
@@ -269,7 +270,7 @@ export default function ViewLeads() {
       headerName: '',
       description: 'This column has a value getter and is not sortable.',
       sortable: false,
-      width: 230,
+      width: 160,
       align: 'right',
       renderCell: (params) => (
         <>
@@ -279,9 +280,9 @@ export default function ViewLeads() {
             onClick={() => {
               updateLead(params.row.id);
             }}
-            sx={{ borderRadius: '100px', padding: '10px' }}
+            sx={{ borderRadius: '50%', padding: '8px', minWidth: 'unset', width: '40px', height: '40px' }}
           >
-            <ModeIcon />
+            <ModeIcon sx={{ fontSize: '24px' }} />
           </Button>
           <Button
             variant="contained"
@@ -290,9 +291,9 @@ export default function ViewLeads() {
               // Handle delete logic here
             }}
             style={{ marginLeft: '5px' }}
-            sx={{ borderRadius: '100px', padding: '10px' }}
+            sx={{ borderRadius: '50%', padding: '8px', minWidth: 'unset', width: '40px', height: '40px' }}
           >
-            <DeleteIcon />
+            <DeleteIcon sx={{ fontSize: '24px' }} />
           </Button>
           {params.row.status != 'Registered' &&
             params.row.status != 'Fake' &&
@@ -305,12 +306,12 @@ export default function ViewLeads() {
                   navigate('/app/leads/addfollowup?id=' + params.row.id);
                 }}
                 style={{ marginLeft: '5px' }}
-                sx={{ borderRadius: '100px', padding: '10px', backgroundColor: '#039116' }}
+                sx={{ borderRadius: '50%', padding: '8px', minWidth: 'unset', width: '40px', height: '40px', backgroundColor: '#039116' }}
               >
-                <AddCircleOutlineIcon sx={{ color: 'white' }} />
+                <AddCircleOutlineIcon sx={{ fontSize: '24px', color: 'white' }} />
               </Button>
             )}
-
+    
           {(params.row.status == 'Registered' ||
             params.row.status == 'Fake' ||
             params.row.status == 'Duplicate' ||
@@ -320,17 +321,17 @@ export default function ViewLeads() {
                 color="success"
                 onClick={() => {
                   restorePrevious(params.row.id);
-                  //navigate('/app/leads/addfollowup?id=' + params.row.id);
                 }}
                 style={{ marginLeft: '5px' }}
-                sx={{ borderRadius: '100px', padding: '10px', backgroundColor: '#d1bd0a' }}
+                sx={{ borderRadius: '50%', padding: '8px', minWidth: 'unset', width: '40px', height: '40px', backgroundColor: '#d1bd0a' }}
               >
-                <SettingsBackupRestoreIcon sx={{ color: 'white' }} />
+                <SettingsBackupRestoreIcon sx={{ fontSize: '24px', color: 'white' }} />
               </Button>
             )}
         </>
       )
     }
+    
   ];
 
   const shortenCourseName = (courseName) => {
@@ -387,6 +388,7 @@ export default function ViewLeads() {
       console.log(leads);
 
       leads = leads.map((lead) => ({
+        reference_number: lead.reference_number,
         id: lead._id,
         date: lead.date,
         scheduled_at: lead.scheduled_at ? lead.scheduled_at : null,
