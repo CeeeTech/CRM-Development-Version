@@ -96,6 +96,7 @@ export default function ViewLeads() {
   const [arrIds, setArrIds] = useState([]);
 
   const [counselors, setCounselors] = useState([]);
+  const [adminCounselors, setAdminCounselors] = useState([]);
 
   const isAdminOrSupervisor = ['admin', 'sup_admin', 'gen_supervisor'].includes(userType?.name);
 
@@ -230,7 +231,7 @@ export default function ViewLeads() {
               <Autocomplete
                 disablePortal
                 id="combo-box-demo"
-                options={counselors}
+                options={counselors.concat(adminCounselors)}
                 sx={{ width: 200, my: 2 }}
                 renderInput={(params) => <TextField {...params} variant="standard" />}
                 value={params.row.counsellor}
@@ -541,6 +542,33 @@ export default function ViewLeads() {
       }
     }
     getCounselors();
+
+    async function getAdminCounselors() {
+      try {
+        const res = await fetch(config.apiUrl + 'api/getAdminCounselors', {
+          method: 'GET',
+          headers: { Authorization: `Bearer ${user.token}` }
+        });
+        if (!res.ok) {
+          if (res.status === 401) {
+            console.error('Unauthorized access. Logging out.');
+            logout();
+          } else if (res.status === 500) {
+            console.error('Internal Server Error.');
+            logout();
+            return;
+          } else {
+            console.error('Error fetching counselors:', res.statusText);
+          }
+          return;
+        }
+        const data = await res.json();
+        setAdminCounselors(data);
+      } catch (error) {
+        console.log('Error fetching counselors:', error);
+      }
+    }
+    getAdminCounselors();
   }, []);
 
   async function fetchStatus() {

@@ -14,5 +14,6 @@ router.get("/getCounsellors", userController.getCounsellors);
 router.put("/updatePassword/:id", userController.updateUserByIdUsernamePassword);
 router.put("/update-user-password/:id", userController.updatePassword);
 router.patch("/update-user-byadmin/:id", userController.updateUserByIdUsernameEmailUserTypeProductType);
+router.get("/getAdminCounselors", userController.getAdminCounselors);
 
 module.exports = router;
